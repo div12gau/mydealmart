@@ -19,28 +19,6 @@ def index(request):
         allProds.append([prod, range(1, nSlides), nSlides])
     params = {'allProds':allProds}
     return render(request, 'shop/index.html', params)
-def searchMatch(query,item):
-	if(query in item.desc.lower() or query in item.product_name.lower() or query in item.category.lower() or query in item.subcategory.lower()):
-		return True
-	return False
-
-def search(request):
-
-    allProds = []
-    query=request.GET.get('search')
-    catprods = Product.objects.values('category', 'id')
-    cats = {item['category'] for item in catprods}
-    for cat in cats:
-        prodtemp = Product.objects.filter(category=cat)
-        prod=[item for item in prodtemp if searchMatch(query,item)]
-        n = len(prod)
-        nSlides = n // 4 + ceil((n / 4) - (n // 4))
-        if(len(prod) != 0):
-        	allProds.append([prod, range(1, nSlides), nSlides])
-    params = {'allProds':allProds, "msg": ""}
-    if(len(allProds) == 0 or len(query) < 4):
-    	params = {'msg':"Please make sure to enter relevent search query"}
-    return render(request, 'shop/search.html', params)
 
 
 def about(request):
@@ -62,7 +40,7 @@ def contact(request):
 
 def tracker(request):
     if request.method=="POST":
-        orderId = request.POST.get('orderId','')
+        orderId = request.POST.get('orderId', '')
         email = request.POST.get('email', '')
         try:
             order = Orders.objects.filter(order_id=orderId, email=email)
@@ -71,14 +49,18 @@ def tracker(request):
                 updates = []
                 for item in update:
                     updates.append({'text': item.update_desc, 'time': item.timestamp})
-                    response = json.dumps([updates, order[0].item_json], default=str)
+                    response = json.dumps([updates, order[0].items_json], default=str)
                 return HttpResponse(response)
             else:
                 return HttpResponse('{}')
         except Exception as e:
             return HttpResponse('{}')
+
     return render(request, 'shop/tracker.html')
 
+
+def search(request):
+    return render(request, 'shop/search.html')
 
 
 def productView(request, myid):
@@ -129,7 +111,6 @@ def checkout(request):
 @csrf_exempt
 def handlerequest(request):
     # paytm will send you post request here
-    #return HttpResponse('done')
     form = request.POST
     response_dict = {}
     for i in form.keys():
